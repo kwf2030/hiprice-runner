@@ -1,0 +1,28 @@
+name: "amazon_cn"
+source: 4
+currency: 0
+match:
+  - "amazon.cn"
+id:
+  match:
+    - "B([0-9A-Za-z]{9})"
+  index: 0
+scripts:
+  # NORITZ 能率 JSQ25-E4/GQ-13E4AFEX 13升燃气热水器防冻型(天然气)（亚马逊自营商品, 由供应商配送）
+  - name: "title"
+    script: "{let title666 = '';let ele1 = document.querySelector('#productTitle');if (ele1) {title666 = ele1.textContent.replace(/\\s+/g, ' ').trim();} else {let ele2 = document.querySelector('#ebooksProductTitle');if (ele2) {title666 = ele2.textContent.replace(/\\s+/g, ' ').trim();}}title666;}"
+  # 2998.00
+  - name: "price"
+    script: "{let price666 = '';for (let i = 0; i < 4; i++) {let ele;switch (i) {case 0:ele = document.querySelector('#priceblock_dealprice');if (ele) {price666 = ele.textContent.replace(/\\s+/g, '').replace(/￥/g, '').replace(/,/g, '');}break;case 1:ele = document.querySelector('#priceblock_ourprice');if (ele) {price666 = ele.textContent.replace(/\\s+/g, '').replace(/￥/g, '').replace(/,/g, '');}break;case 2:ele = document.querySelectorAll('span.a-color-price');if (ele) {Array.prototype.slice.call(ele).map(function (e) {return e.textContent.replace(/\\s+/g, '').replace(/￥/g, '').replace(/,/g, '');}).every(function (s) {let price = parseFloat(s);if (price) {price666 = price + '';return false;} else {let regex = /^\\d{1,9}[-~]\\d{1,9}$/;if (regex.test(s)) {price666 = s;return false;} else {return true;}}});}break;case 3:ele = document.querySelectorAll('span.a-size-mini');if (ele) {Array.prototype.slice.call(ele).map(function (e) {return e.textContent.replace(/\\s+/g, '').replace(/￥/g, '').replace(/,/g, '');}).every(function (s) {let price = parseFloat(s);if (price) {price666 = price + '';return false;} else {let regex = /^\\d{1,9}[-~]\\d{1,9}$/;if (regex.test(s)) {price666 = s;return false;} else {return true;}}});}break;}if (price666) {break;}}price666;}"
+  # 2
+  - name: "stock"
+    script: "{let stock666 = '';let s = document.querySelector('#ddmAvailabilityMessage').textContent.replace(/\\s+/g, '');if (s === '现在有货') {stock666 = '10000000';} else {let i1 = s.indexOf('剩');let i2 = s.indexOf('件');if (i1 !== -1 && i2 > i1 + 1) {stock666 = s.substring(i1 + 1, i2);}}stock666;}"
+  # 大家电_热水器_燃气热水器
+  - name: "category"
+    script: "{document.querySelector('#wayfinding-breadcrumbs_feature_div > ul').textContent.replace(/\\s+/g, '').split('›').filter(function (s) {return s !== '';}).join('_');}"
+  # {"total":"17","star5":"13","star4":"2","star3":"1","star2":"0","star1":"1"}
+  - name: "comments"
+    script: "{let comments666 = {};let ele1 = document.querySelector('.totalReviewCount');if (ele1) {let totalStr = ele1.textContent.replace(/\\s+/g, '').replace(/,/g, '').replace(/\\+/g, '');comments666['total'] = totalStr;let total = parseInt(totalStr);let ele2 = document.querySelectorAll('.a-histogram-row');if (ele2) {Array.prototype.slice.call(ele2).map(function (e) {return e.children[2].textContent.replace(/\\s+/g, '').replace(/%/g, '');}).forEach(function (s, i) {let n = parseInt(s);n = total * n / 100;n = Math.round(n);let v = n + '';switch (i) {case 0:comments666['star5'] = v;break;case 1:comments666['star4'] = v;break;case 2:comments666['star3'] = v;break;case 3:comments666['star2'] = v;break;case 4:comments666['star1'] = v;break;}});}JSON.stringify(comments666);}}"
+  # ["url1","url2","url3"...]
+  - name: "recommends"
+    script: "{JSON.stringify(Array.prototype.slice.call(document.querySelector('.a-carousel').querySelectorAll('li > div > a')).map(function (e) {return e.href;}));}"

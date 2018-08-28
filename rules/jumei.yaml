@@ -1,0 +1,35 @@
+name: "jumei"
+source: 11
+currency: 0
+match:
+  - "jumei.com"
+  - "jumeiglobal.com"
+chain:
+  - match:
+      - "share.jumei.com"
+      - "fd.jumei.com"
+      - "share.jumeiglobal.com"
+      - "fd.jumeiglobal.com"
+    index: "item_id=([^&]*)"
+    index_count: 4
+    template: "http://item.jumei.com/$1.html"
+    alloc: 50
+id:
+  match:
+    - "com/(\\w*)\\.html"
+  index: 1
+scripts:
+  # 战地吉圃时尚休闲男士短polo衫NTS-T01
+  - name: "title"
+    script: "{let title666 = '';let selector = ['.long_title', '.share_title', '.pop_detail_tit', '.mall_main_title', '.chn_title', '.title'];for (let i = 0; i < selector.length; i++) {let ele = document.querySelector(selector[i]);if (ele) {title666 = ele.textContent.replace(/\\s+/g, ' ').trim();break;}}title666;}"
+  # 79
+  - name: "price"
+    script: "{let price666 = '';let selector = ['.price_now', '.price_num', '.jumei_price', '.deal_accout_two'];for (let i = 0; i < selector.length; i++) {let ele = document.querySelector(selector[i]);if (ele) {price666 = ele.textContent.replace(/\\s+/g, '').replace(/¥/g, '').replace(/,/g, ',');break;}}price666;}"
+  # 部分商品有销量字段，
+  # 4
+  - name: "sales"
+    script: "{let sales666 = '';let selector = ['.red_num', '.pop_sold', '#buy_number', '.num', '.red'];for (let i = 0; i < selector.length; i++) {let ele = document.querySelector(selector[i]);if (ele) {sales666 = ele.textContent.replace(/\\s+/g, '').replace(/,/g, '').replace(/\\+/g, '').replace('人已购买', '');break;}}sales666;}"
+  # 部分商品有分类字段，
+  # 聚美优品首页_名品特卖_战地吉圃时尚男士polo衫NTS-T01
+  - name: "category"
+    script: "{let cat666 = '';let selector = ['#mall_detail_sub', '.breadcrumbs', '.subpage_menu_l'];for (let i = 0; i < selector.length; i++) {let ele = document.querySelector(selector[i]);if (ele) {cat666 = ele.textContent.replace(/\\s+/g, '').split('>').filter(function (s) {return s !== ''}).join('_');break;}}cat666;}"

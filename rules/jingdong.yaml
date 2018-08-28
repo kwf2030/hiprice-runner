@@ -1,0 +1,44 @@
+name: "jingdong"
+source: 3
+currency: 0
+match:
+  - "jd.com"
+  - "jd.hk"
+chain:
+  - match:
+      - "item.m.jd"
+    index: "/(\\d{6,12})\\.html"
+    index_count: 4
+    template: "https://item.jd.com/$1.html"
+    alloc: 40
+  - match:
+      - "wqs.jd"
+    index: "sku=(\\d{6,12})"
+    index_count: 4
+    template: "https://item.jd.com/$1.html"
+    alloc: 40
+id:
+  match:
+    - "/(\\d{6,12})\\.html"
+  index: 1
+scripts:
+  # 【经典款】TheNorthFace北面春夏新品透气户外休闲男短袖T恤|3L8J 682/红色 L
+  - name: "title"
+    script: "{document.querySelector('.sku-name').textContent.replace(/\\s+/g, ' ').trim();}"
+  # 212.00
+  - name: "price"
+    script: "{document.querySelector('span.J-p-$id').textContent.replace(/\\s+/g, '').replace(/¥/g, '').replace(/,/g, '');}"
+  # 运动户外_户外鞋服_T恤_北面（TheNorthFace）_【经典款】TheNorthFace北面春夏新品透气户外休闲男短袖T恤|3L8J682/红色L
+  - name: "category"
+    script: "{document.querySelector('.crumb').textContent.replace(/\\s+/g, '').split('>').filter(function(s) {return s !== ''}).join('_');}"
+  - name: "comments.scroll"
+    script: "{document.documentElement.scrollBy(0, 1000);}"
+    async: true
+    sleep: 200
+  - name: "comments.click"
+    script: "{Array.prototype.slice.call(document.querySelector('#detail > div > ul').children).filter(function (e) {return e.textContent.indexOf('商品评价') !== -1;})[0].click();}"
+    async: true
+    sleep: 800
+  # {"total":"2万","star5":"1.9万","star3":"100","star1":"300","image":"500","append":"400"}
+  - name: "comments"
+    script: "{let comments666 = {};let obj = {};let ele = document.querySelector('.filter-list');if (ele) {Array.prototype.slice.call(ele.children).map(function (e) {return e.textContent.replace(/\\s+/g, '').replace(/,/g, '').replace(/\\+/g, '');}).filter(function (s) {return s.indexOf('试用') === -1 && s.indexOf('只看') === -1;}).map(function (s) {return s.replace(/\\(/g, ':').replace(/\\)/g, '');}).forEach(function (s) {let a = s.split(':');obj[a[0]] = a[1];});}comments666['total'] = obj['全部评价'];comments666['star5'] = obj['好评'];comments666['star3'] = obj['中评'];comments666['star1'] = obj['差评'];comments666['image'] = obj['晒图'];comments666['append'] = obj['追评'];JSON.stringify(comments666);}"

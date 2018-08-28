@@ -1,0 +1,37 @@
+name: "kaola"
+source: 13
+currency: 0
+match:
+  - "kaola.com"
+chain:
+  - match:
+      - "m.kaola.com"
+    index: "/(\\d{6,12})\\.html"
+    index_count: 4
+    template: "https://www.kaola.com/product/$1.html"
+    alloc: 45
+id:
+  match:
+    - "/(\\d{6,12})\\.html"
+  index: 1
+scripts:
+  # 【新人专享】Bio Island 婴幼儿鳕鱼油胶囊 90粒
+  - name: "title"
+    script: "{document.querySelector('.product-title').textContent.replace(/\\s+/g, ' ').trim();}"
+  # 68.00
+  - name: "price"
+    script: "{document.querySelector('.PInfo_r').textContent.replace(/\\s+/g, '').replace(/¥/g, '').replace(/,/g, '');}"
+  # 母婴_辅食营养品_DHA\核桃油_佰澳朗德_【新人专享】BioIsland婴幼儿鳕鱼油胶囊90粒
+  - name: "category"
+    script: "{document.querySelector('.crumbs').textContent.replace(/\\s+/g, '').split('>').filter(function(s) {return s !== ''}).join('_');}"
+  - name: "comments.scroll"
+    script: "{document.documentElement.scrollBy(0, 1000);}"
+    async: true
+    sleep: 200
+  - name: "comments.click"
+    script: "{document.querySelector('.j-userratingTab').click();}"
+    async: true
+    sleep: 800
+  # {"total":"3441","image":"448","append":"52"}
+  - name: "comments"
+    script: "{let comments666 = {};let ele = document.querySelector('#j-commenttablist');if (ele) {Array.prototype.slice.call(ele.children).map(function (e) {return e.textContent.replace(/\\s+/g, '').replace(/,/g, '').replace(/\\+/g, '');}).forEach(function (s) {let i = s.indexOf('全部');if (i !== -1) {if (s.length < i + 2) {comments666['total'] = '0';} else {comments666['total'] = s.substring(i + 2);}return;}i = s.indexOf('有图');if (i !== -1) {if (s.length < i + 2) {comments666['image'] = '0';} else {comments666['image'] = s.substring(i + 2);}return;}i = s.indexOf('追评');if (i !== -1) {if (s.length < i + 2) {comments666['append'] = '0';} else {comments666['append'] = s.substring(i + 2);}}});}JSON.stringify(comments666);}"

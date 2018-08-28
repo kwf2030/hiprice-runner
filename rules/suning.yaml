@@ -1,0 +1,37 @@
+name: "suning"
+source: 12
+currency: 0
+match:
+  - "suning.com"
+chain:
+  - match:
+      - "m.suning.com"
+    index: "(\\d{6,12})/(\\d{6,20})\\.html"
+    index_count: 6
+    template: "https://product.suning.com/$1/$2.html"
+    alloc: 65
+id:
+  match:
+    - "(\\d*)\\.html"
+  index: 1
+scripts:
+  # 自营TISSOT 天梭 力洛克系列新款 复古表盘 机械男表 T006.407.16.033.00
+  - name: "title"
+    script: "{document.querySelector('#itemDisplayName').textContent.replace(/\\s+/g, ' ').trim();}"
+  # 3570.00
+  - name: "price"
+    script: "{document.querySelector('.mainprice').textContent.replace(/\\s+/g, '').replace(/¥/g, '').replace(/,/g, '');}"
+  # 钟表/礼品/乐器_钟表_机械表_天梭(TISSOT)机械表_天梭(TISSOT)T006.407.11.033.00机械表
+  - name: "category"
+    script: "{Array.prototype.slice.call(document.querySelector('.breadcrumb').children).map(function (e) {return e.childElementCount === 0 ? e.textContent.replace(/\\s+/g, '') : e.children[0].textContent.replace(/\\s+/g, '');}).filter(function (e) {return e !== '' && e !== '>'}).join('_');}"
+  - name: "comments.scroll"
+    script: "{document.documentElement.scrollBy(0, 1000);}"
+    async: true
+    sleep: 200
+  - name: "comments.click"
+    script: "{document.querySelector('#productCommTitle').click();}"
+    async: true
+    sleep: 800
+  # {"total":"252","star5":"252","star3":"0","star1":"0","image":"1","append":"0"}
+  - name: "comments"
+    script: "{let comments666 = {};let obj = {};let ele = document.querySelector('.rv-place-item');if (ele) {Array.prototype.slice.call(ele.children).map(function (e) {return e.textContent.replace(/\\s+/g, '').replace(/,/g, '').replace(/\\+/g, '');}).filter(function (s) {return s.indexOf('试用') === -1;}).map(function (s) {return s.replace(/\\(/g, ':').replace(/\\)/g, '');}).forEach(function (s) {let a = s.split(':');obj[a[0]] = a[1];});}comments666['total'] = obj['全部'];comments666['star5'] = obj['好评'];comments666['star3'] = obj['中评'];comments666['star1'] = obj['差评'];comments666['image'] = obj['有图评价'];comments666['append'] = obj['追评'];JSON.stringify(comments666);}"
