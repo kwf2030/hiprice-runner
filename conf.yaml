@@ -32,7 +32,7 @@ chrome:
       - '--no-first-run'
       - '--no-default-browser-check'
       - '--window-size=1024,768'
-      - '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36'
+      - '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.92 Safari/537.36'
   linux:
     exec: '/usr/bin/google-chrome-stable'
     args:
@@ -42,7 +42,7 @@ chrome:
       - '--no-first-run'
       - '--no-default-browser-check'
       - '--window-size=1024,768'
-      - '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36'
+      - '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.92 Safari/537.36'
 
 task:
   # 每次任务完成后距离下次任务轮询间隔（分钟）

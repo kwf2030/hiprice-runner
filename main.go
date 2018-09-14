@@ -193,6 +193,15 @@ func run() {
         reportProducts(task)
       }
       close(ch)
+      conn, e := beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
+      if e != nil {
+        logger.Error().Err(e).Msg("ERR: Dial")
+        break
+      }
+      e = conn.Delete(jobID)
+      if e != nil {
+        logger.Error().Err(e).Msg("ERR: Delete")
+      }
       jobID = ""
     }
     scheduleNextTime()
@@ -245,12 +254,12 @@ func checkTask() *Task {
     return nil
   }
   dump(fmt.Sprintf("%s/dump/%s_check.json", Conf.Log.Dir, t.ID), data)
-  logger.Info().Msgf("check task, ok, jobID=%s, taskID=%d, count=%d", jobID, t.ID, len(t.Payloads))
+  logger.Info().Msgf("check task, ok, jobID=%s, taskID=%s, count=%d", jobID, t.ID, len(t.Payloads))
   return t
 }
 
 func processMessages(ch chan<- *Product, arr []*Message) []*Payload {
-  ret := make([]*Payload, len(arr))
+  payloads := make([]*Payload, len(arr))
   // i为重试的次数，j为实际抓取的数量
   i, j := 0, 0
   for {
@@ -267,7 +276,7 @@ func processMessages(ch chan<- *Product, arr []*Message) []*Payload {
       if m == nil {
         continue
       }
-      payload := ret[n]
+      payload := payloads[n]
       if payload != nil && payload.Product != nil && payload.Product.ID != "" && payload.Product.Price != NoValue {
         continue
       }
@@ -290,7 +299,7 @@ func processMessages(ch chan<- *Product, arr []*Message) []*Payload {
         logger.Warn().Msg("get short url failed")
       }
       p.UpdateTime = times.Now()
-      ret[n] = &Payload{Message: m, Product: p}
+      payloads[n] = &Payload{Message: m, Product: p}
       ch <- p
       j++
       if p.Price == RangePrice {
@@ -304,6 +313,12 @@ func processMessages(ch chan<- *Product, arr []*Message) []*Payload {
     }
   }
   logger.Info().Msgf("process messages, ok, retry %d times, %d messages processed", i, j)
+  ret := make([]*Payload, 0, len(arr))
+  for _, v := range payloads {
+    if v != nil {
+      ret = append(ret, v)
+    }
+  }
   return ret
 }
 
@@ -331,7 +346,7 @@ func reportMessages(task *Task) {
 }
 
 func processProducts(ch chan<- *Product, arr []*Product) []*Payload {
-  ret := make([]*Payload, len(arr))
+  payloads := make([]*Payload, len(arr))
   // i为重试的次数，j为实际抓取的数量
   i, j := 0, 0
   for {
@@ -348,7 +363,7 @@ func processProducts(ch chan<- *Product, arr []*Product) []*Payload {
       if m == nil {
         continue
       }
-      payload := ret[n]
+      payload := payloads[n]
       if payload != nil && payload.Product != nil && payload.Product.ID != "" && payload.Product.Price != NoValue {
         continue
       }
@@ -383,7 +398,7 @@ func processProducts(ch chan<- *Product, arr []*Product) []*Payload {
         logger.Warn().Msg("get short url failed")
       }
       p.UpdateTime = times.Now()
-      ret[n] = &Payload{Product: p}
+      payloads[n] = &Payload{Product: p}
       ch <- p
       j++
       if p.Price == RangePrice {
@@ -397,16 +412,23 @@ func processProducts(ch chan<- *Product, arr []*Product) []*Payload {
     }
   }
   logger.Info().Msgf("process products, ok, retry %d times, %d products processed", i, j)
+  ret := make([]*Payload, 0, len(arr))
+  for _, v := range payloads {
+    if v != nil {
+      ret = append(ret, v)
+    }
+  }
   return ret
 }
 
 func reportProducts(task *Task) {
   logger.Info().Msgf("report products")
   conn, e := beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
-  defer func() {
-    conn.Delete(jobID)
-    conn.Quit()
-  }()
+  if e != nil {
+    logger.Error().Err(e).Msg("ERR: Dial")
+    return
+  }
+  defer conn.Quit()
   e = conn.Use(Conf.Beanstalk.PutTube)
   if e != nil {
     logger.Error().Err(e).Msg("ERR: Use")
