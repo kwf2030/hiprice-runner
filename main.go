@@ -244,7 +244,7 @@ func checkTask() *Task {
     logger.Error().Err(e).Msg("ERR: Unmarshal")
     return nil
   }
-  dump(fmt.Sprintf("%s/dump/%s_t.json", Conf.Log.Dir, t.ID), data)
+  dump(fmt.Sprintf("%s/dump/%s_check.json", Conf.Log.Dir, t.ID), data)
   logger.Info().Msgf("check task, ok, jobID=%s, taskID=%d, count=%d", jobID, t.ID, len(t.Payloads))
   return t
 }
@@ -321,7 +321,7 @@ func reportMessages(task *Task) {
     return
   }
   data, _ := json.Marshal(task)
-  dump(fmt.Sprintf("%s/dump/%s_m.json", Conf.Log.Dir, task.ID), data)
+  dump(fmt.Sprintf("%s/dump/%s_msg.json", Conf.Log.Dir, task.ID), data)
   _, e = conn.Put(Conf.Beanstalk.PutPriority, Conf.Beanstalk.PutDelay, Conf.Beanstalk.PutTTR, data)
   if e != nil {
     logger.Error().Err(e).Msg("ERR: Put")
@@ -413,7 +413,7 @@ func reportProducts(task *Task) {
     return
   }
   data, _ := json.Marshal(task)
-  dump(fmt.Sprintf("%s/dump/%s_p.json", Conf.Log.Dir, task.ID), data)
+  dump(fmt.Sprintf("%s/dump/%s_products.json", Conf.Log.Dir, task.ID), data)
   _, e = conn.Put(Conf.Beanstalk.PutPriority, Conf.Beanstalk.PutDelay, Conf.Beanstalk.PutTTR, data)
   if e != nil {
     logger.Error().Err(e).Msg("ERR: Put")
