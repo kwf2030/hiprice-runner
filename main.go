@@ -1,7 +1,6 @@
 package main
 
 import (
-  "encoding/base64"
   "encoding/json"
   "errors"
   "fmt"
@@ -39,6 +38,8 @@ var (
 
   // Beanstalk的任务ID，抓完之后要删除
   jobID string
+
+  conn *beanstalk.Conn
 )
 
 func main() {
@@ -69,6 +70,9 @@ func main() {
       tab.CallAsync(cdp.Browser.Close)
     }
   }()
+
+  initBeanstalk()
+  defer conn.Quit()
 
   go run()
   loopChan <- struct{}{}
@@ -143,6 +147,14 @@ func initChrome() {
   logger.Info().Msg(msg.Result["product"].(string))
 }
 
+func initBeanstalk() {
+  var e error
+  conn, e = beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
+  if e != nil {
+    panic(e)
+  }
+}
+
 func run() {
   // 外层循环是定时任务
   for range loopChan {
@@ -192,17 +204,12 @@ func run() {
         }
         reportProducts(task)
       }
-      close(ch)
-      conn, e := beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
-      if e != nil {
-        logger.Error().Err(e).Msg("ERR: Dial")
-        break
-      }
-      e = conn.Delete(jobID)
+      e := conn.Delete(jobID)
       if e != nil {
         logger.Error().Err(e).Msg("ERR: Delete")
       }
       jobID = ""
+      close(ch)
     }
     scheduleNextTime()
   }
@@ -216,23 +223,11 @@ func scheduleNextTime() {
 }
 
 func checkTask() *Task {
-  conn, e := beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
-  if e != nil {
-    logger.Error().Err(e).Msg("ERR: Dial")
-    return nil
-  }
-  defer conn.Quit()
-  _, e = conn.Watch(Conf.Beanstalk.ReserveTube)
+  _, e := conn.Watch(Conf.Beanstalk.ReserveTube)
   if e != nil {
     logger.Error().Err(e).Msg("ERR: Watch")
     return nil
   }
-  e = conn.Use(Conf.Beanstalk.ReserveTube)
-  if e != nil {
-    logger.Error().Err(e).Msg("ERR: Use")
-    return nil
-  }
-  conn.Ignore("default")
   var job []byte
   jobID, job, e = conn.ReserveWithTimeout(Conf.Beanstalk.ReserveTimeout)
   if e != nil {
@@ -241,19 +236,13 @@ func checkTask() *Task {
     }
     return nil
   }
-  data := make([]byte, base64.RawStdEncoding.DecodedLen(len(job)))
-  _, e = base64.RawStdEncoding.Decode(data, job)
-  if e != nil {
-    logger.Error().Err(e).Msg("ERR: Decode")
-    return nil
-  }
   t := &Task{}
-  e = json.Unmarshal(data, t)
+  e = json.Unmarshal(job, t)
   if e != nil {
     logger.Error().Err(e).Msg("ERR: Unmarshal")
     return nil
   }
-  dump(fmt.Sprintf("%s/dump/%s_check.json", Conf.Log.Dir, t.ID), data)
+  dump(fmt.Sprintf("%s/dump/%s_check.json", Conf.Log.Dir, t.ID), job)
   logger.Info().Msgf("check task, ok, jobID=%s, taskID=%s, count=%d", jobID, t.ID, len(t.Payloads))
   return t
 }
@@ -323,14 +312,7 @@ func processMessages(ch chan<- *Product, arr []*Message) []*Payload {
 }
 
 func reportMessages(task *Task) {
-  logger.Info().Msgf("report messages")
-  conn, e := beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
-  if e != nil {
-    logger.Error().Err(e).Msg("ERR: Dial")
-    return
-  }
-  defer conn.Quit()
-  e = conn.Use(Conf.Beanstalk.PutTube)
+  e := conn.Use(Conf.Beanstalk.PutTube)
   if e != nil {
     logger.Error().Err(e).Msg("ERR: Use")
     return
@@ -422,14 +404,7 @@ func processProducts(ch chan<- *Product, arr []*Product) []*Payload {
 }
 
 func reportProducts(task *Task) {
-  logger.Info().Msgf("report products")
-  conn, e := beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
-  if e != nil {
-    logger.Error().Err(e).Msg("ERR: Dial")
-    return
-  }
-  defer conn.Quit()
-  e = conn.Use(Conf.Beanstalk.PutTube)
+  e := conn.Use(Conf.Beanstalk.PutTube)
   if e != nil {
     logger.Error().Err(e).Msg("ERR: Use")
     return
