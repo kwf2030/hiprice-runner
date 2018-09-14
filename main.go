@@ -153,6 +153,14 @@ func initBeanstalk() {
   if e != nil {
     panic(e)
   }
+  e = conn.Use(Conf.Beanstalk.PutTube)
+  if e != nil {
+    panic(e)
+  }
+  _, e = conn.Watch(Conf.Beanstalk.ReserveTube)
+  if e != nil {
+    panic(e)
+  }
 }
 
 func run() {
@@ -223,11 +231,7 @@ func scheduleNextTime() {
 }
 
 func checkTask() *Task {
-  _, e := conn.Watch(Conf.Beanstalk.ReserveTube)
-  if e != nil {
-    logger.Error().Err(e).Msg("ERR: Watch")
-    return nil
-  }
+  var e error
   var job []byte
   jobID, job, e = conn.ReserveWithTimeout(Conf.Beanstalk.ReserveTimeout)
   if e != nil {
@@ -312,11 +316,7 @@ func processMessages(ch chan<- *Product, arr []*Message) []*Payload {
 }
 
 func reportMessages(task *Task) {
-  e := conn.Use(Conf.Beanstalk.PutTube)
-  if e != nil {
-    logger.Error().Err(e).Msg("ERR: Use")
-    return
-  }
+  var e error
   data, _ := json.Marshal(task)
   dump(fmt.Sprintf("%s/dump/%s_msg.json", Conf.Log.Dir, task.ID), data)
   _, e = conn.Put(Conf.Beanstalk.PutPriority, Conf.Beanstalk.PutDelay, Conf.Beanstalk.PutTTR, data)
@@ -404,11 +404,7 @@ func processProducts(ch chan<- *Product, arr []*Product) []*Payload {
 }
 
 func reportProducts(task *Task) {
-  e := conn.Use(Conf.Beanstalk.PutTube)
-  if e != nil {
-    logger.Error().Err(e).Msg("ERR: Use")
-    return
-  }
+  var e error
   data, _ := json.Marshal(task)
   dump(fmt.Sprintf("%s/dump/%s_products.json", Conf.Log.Dir, task.ID), data)
   _, e = conn.Put(Conf.Beanstalk.PutPriority, Conf.Beanstalk.PutDelay, Conf.Beanstalk.PutTTR, data)
