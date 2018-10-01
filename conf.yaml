@@ -3,7 +3,7 @@ log:
   level: 'info'
 
 beanstalk:
-  host: '127.0.0.1'
+  host: 'localhost'
   port: 11300
   # 取任务的队列
   reserve_tube: 'task_dispatch'
