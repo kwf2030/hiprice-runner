@@ -149,17 +149,22 @@ func initChrome() {
 
 func initBeanstalk() {
   var e error
-  conn, e = beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
-  if e != nil {
-    panic(e)
-  }
-  e = conn.Use(Conf.Beanstalk.PutTube)
-  if e != nil {
-    panic(e)
-  }
-  _, e = conn.Watch(Conf.Beanstalk.ReserveTube)
-  if e != nil {
-    panic(e)
+  for i := 0; i < 3; i++ {
+    conn, e = beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
+    if e != nil {
+      logger.Info().Msg("beanstalk connect failed, will retry 30 seconds later")
+      time.Sleep(time.Second * 30)
+      continue
+    }
+    e = conn.Use(Conf.Beanstalk.PutTube)
+    if e != nil {
+      panic(e)
+    }
+    _, e = conn.Watch(Conf.Beanstalk.ReserveTube)
+    if e != nil {
+      panic(e)
+    }
+    break
   }
 }
 
