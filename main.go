@@ -148,8 +148,8 @@ func initChrome() {
 }
 
 func initBeanstalk() {
-  var e error
   for i := 0; i < 3; i++ {
+    var e error
     conn, e = beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
     if e != nil {
       logger.Info().Msg("beanstalk connect failed, will retry 30 seconds later")
