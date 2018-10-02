@@ -19,8 +19,7 @@ beanstalk:
   put_ttr: 21600
 
 # 设置Chrome和启动参数，
-# 在headless模式下，设置--user-data-dir会导致Chrome无响应（非headless没影响，可能是Chrome的bug），
-# Chrome: 68.0.3440.106
+# 在headless模式下，设置--user-data-dir会导致Chrome无响应（68.0.3440.106，非headless没影响，可能是Chrome的bug）
 chrome:
   windows:
     exec: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe'
@@ -32,7 +31,7 @@ chrome:
       - '--no-first-run'
       - '--no-default-browser-check'
       - '--window-size=1024,768'
-      - '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.92 Safari/537.36'
+      - 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1'
   linux:
     exec: '/usr/bin/google-chrome-stable'
     args:
@@ -42,7 +41,7 @@ chrome:
       - '--no-first-run'
       - '--no-default-browser-check'
       - '--window-size=1024,768'
-      - '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.92 Safari/537.36'
+      - 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1'
 
 task:
   # 每次任务完成后距离下次任务轮询间隔（分钟）
