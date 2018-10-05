@@ -19,7 +19,7 @@ import (
   "github.com/rs/zerolog"
 )
 
-const Version = "0.1.0"
+const Version = "1.0.0"
 
 var (
   // 保存所有抓过的商品，
