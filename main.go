@@ -38,8 +38,6 @@ var (
 
   // Beanstalk的任务ID，抓完之后要删除
   jobID string
-
-  conn *beanstalk.Conn
 )
 
 func main() {
@@ -70,9 +68,6 @@ func main() {
       tab.CallAsync(cdp.Browser.Close)
     }
   }()
-
-  initBeanstalk()
-  defer conn.Quit()
 
   go run()
   loopChan <- struct{}{}
@@ -147,25 +142,19 @@ func initChrome() {
   logger.Info().Msg(msg.Result["product"].(string))
 }
 
-func initBeanstalk() {
+func connectBeanstalk() *beanstalk.Conn {
   for i := 0; i < 3; i++ {
-    var e error
-    conn, e = beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
+    conn, e := beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
     if e != nil {
       logger.Info().Msg("beanstalk connect failed, will retry 30 seconds later")
       time.Sleep(time.Second * 30)
       continue
     }
-    e = conn.Use(Conf.Beanstalk.PutTube)
-    if e != nil {
-      panic(e)
-    }
-    _, e = conn.Watch(Conf.Beanstalk.ReserveTube)
-    if e != nil {
-      panic(e)
-    }
-    break
+    conn.Use(Conf.Beanstalk.PutTube)
+    conn.Watch(Conf.Beanstalk.ReserveTube)
+    return conn
   }
+  return nil
 }
 
 func run() {
@@ -217,6 +206,7 @@ func run() {
         }
         reportProducts(task)
       }
+      conn := connectBeanstalk()
       e := conn.Delete(jobID)
       if e != nil {
         logger.Error().Err(e).Msg("ERR: Delete")
@@ -236,6 +226,8 @@ func scheduleNextTime() {
 }
 
 func checkTask() *Task {
+  conn := connectBeanstalk()
+  defer conn.Quit()
   var e error
   var job []byte
   jobID, job, e = conn.ReserveWithTimeout(Conf.Beanstalk.ReserveTimeout)
@@ -321,6 +313,8 @@ func processMessages(ch chan<- *Product, arr []*Message) []*Payload {
 }
 
 func reportMessages(task *Task) {
+  conn := connectBeanstalk()
+  defer conn.Quit()
   var e error
   data, _ := json.Marshal(task)
   dump(fmt.Sprintf("%s/dump/%s_msg.json", Conf.Log.Dir, task.ID), data)
@@ -409,6 +403,8 @@ func processProducts(ch chan<- *Product, arr []*Product) []*Payload {
 }
 
 func reportProducts(task *Task) {
+  conn := connectBeanstalk()
+  defer conn.Quit()
   var e error
   data, _ := json.Marshal(task)
   dump(fmt.Sprintf("%s/dump/%s_products.json", Conf.Log.Dir, task.ID), data)
