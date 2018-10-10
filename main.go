@@ -33,11 +33,13 @@ var (
   logFile *os.File
   logger  *zerolog.Logger
 
-  store  *boltdb.KVStore
+  store  *boltdb.Store
   chrome cdp.Chrome
 
   // Beanstalk的任务ID，抓完之后要删除
   jobID string
+
+  conn *beanstalk.Conn
 )
 
 func main() {
@@ -68,6 +70,9 @@ func main() {
       tab.CallAsync(cdp.Browser.Close)
     }
   }()
+
+  initBeanstalk()
+  defer conn.Quit()
 
   go run()
   loopChan <- struct{}{}
@@ -142,9 +147,10 @@ func initChrome() {
   logger.Info().Msg(msg.Result["product"].(string))
 }
 
-func connectBeanstalk() *beanstalk.Conn {
+func initBeanstalk() {
+  var e error
   for i := 0; i < 3; i++ {
-    conn, e := beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
+    conn, e = beanstalk.Dial(Conf.Beanstalk.Host, Conf.Beanstalk.Port)
     if e != nil {
       logger.Info().Msg("beanstalk connect failed, will retry 30 seconds later")
       time.Sleep(time.Second * 30)
@@ -152,9 +158,13 @@ func connectBeanstalk() *beanstalk.Conn {
     }
     conn.Use(Conf.Beanstalk.PutTube)
     conn.Watch(Conf.Beanstalk.ReserveTube)
-    return conn
+    conn.Ignore("default")
+    conn.EnableHeartbeat(Conf.Beanstalk.Heartbeat)
+    break
   }
-  return nil
+  if conn == nil {
+    panic(e)
+  }
 }
 
 func run() {
@@ -162,7 +172,7 @@ func run() {
   for range loopChan {
     // 内层循环是一直取任务直到没有为止
     for {
-      t := checkTask()
+      t := reserveTask()
       if t == nil || len(t.Payloads) == 0 {
         break
       }
@@ -206,7 +216,6 @@ func run() {
         }
         reportProducts(task)
       }
-      conn := connectBeanstalk()
       e := conn.Delete(jobID)
       if e != nil {
         logger.Error().Err(e).Msg("ERR: Delete")
@@ -225,9 +234,7 @@ func scheduleNextTime() {
   })
 }
 
-func checkTask() *Task {
-  conn := connectBeanstalk()
-  defer conn.Quit()
+func reserveTask() *Task {
   var e error
   var job []byte
   jobID, job, e = conn.ReserveWithTimeout(Conf.Beanstalk.ReserveTimeout)
@@ -243,7 +250,7 @@ func checkTask() *Task {
     logger.Error().Err(e).Msg("ERR: Unmarshal")
     return nil
   }
-  dump(fmt.Sprintf("%s/dump/%s_check.json", Conf.Log.Dir, t.ID), job)
+  dump(fmt.Sprintf("%s/dump/%s_reserve.json", Conf.Log.Dir, t.ID), job)
   logger.Info().Msgf("check task, ok, jobID=%s, taskID=%s, count=%d", jobID, t.ID, len(t.Payloads))
   return t
 }
@@ -302,7 +309,7 @@ func processMessages(ch chan<- *Product, arr []*Message) []*Payload {
       break
     }
   }
-  logger.Info().Msgf("process messages, ok, retry %d times, %d messages processed", i, j)
+  logger.Info().Msgf("process messages, ok, tried %d times, %d messages processed", i, j)
   ret := make([]*Payload, 0, len(arr))
   for _, v := range payloads {
     if v != nil {
@@ -313,15 +320,13 @@ func processMessages(ch chan<- *Product, arr []*Message) []*Payload {
 }
 
 func reportMessages(task *Task) {
-  conn := connectBeanstalk()
-  defer conn.Quit()
   var e error
   data, _ := json.Marshal(task)
   dump(fmt.Sprintf("%s/dump/%s_msg.json", Conf.Log.Dir, task.ID), data)
   _, e = conn.Put(Conf.Beanstalk.PutPriority, Conf.Beanstalk.PutDelay, Conf.Beanstalk.PutTTR, data)
   if e != nil {
     logger.Error().Err(e).Msg("ERR: Put")
-    return
+    panic(e)
   }
   logger.Info().Msg("report messages, ok")
 }
@@ -392,7 +397,7 @@ func processProducts(ch chan<- *Product, arr []*Product) []*Payload {
       break
     }
   }
-  logger.Info().Msgf("process products, ok, retry %d times, %d products processed", i, j)
+  logger.Info().Msgf("process products, ok, tried %d times, %d products processed", i, j)
   ret := make([]*Payload, 0, len(arr))
   for _, v := range payloads {
     if v != nil {
@@ -403,15 +408,13 @@ func processProducts(ch chan<- *Product, arr []*Product) []*Payload {
 }
 
 func reportProducts(task *Task) {
-  conn := connectBeanstalk()
-  defer conn.Quit()
   var e error
   data, _ := json.Marshal(task)
-  dump(fmt.Sprintf("%s/dump/%s_products.json", Conf.Log.Dir, task.ID), data)
+  dump(fmt.Sprintf("%s/dump/%s_report_products.json", Conf.Log.Dir, task.ID), data)
   _, e = conn.Put(Conf.Beanstalk.PutPriority, Conf.Beanstalk.PutDelay, Conf.Beanstalk.PutTTR, data)
   if e != nil {
     logger.Error().Err(e).Msg("ERR: Put")
-    return
+    panic(e)
   }
   logger.Info().Msg("report products, ok")
 }

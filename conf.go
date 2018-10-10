@@ -27,6 +27,7 @@ type BeanstalkConf struct {
   PutPriority    int    `yaml:"put_priority"`
   PutDelay       int    `yaml:"put_delay"`
   PutTTR         int    `yaml:"put_ttr"`
+  Heartbeat      int    `yaml:"heartbeat"`
 }
 
 type ChromeConf struct {

@@ -6,8 +6,11 @@ import (
   "errors"
   "fmt"
   "io"
+  "math/rand"
   "net"
+  "strconv"
   "strings"
+  "time"
 )
 
 const (
@@ -70,10 +73,14 @@ func isNetErrorTemporary(err error) bool {
 }
 
 type Conn struct {
-  conn      net.Conn
-  addr      string
+  conn net.Conn
+  addr string
+
   bufReader *bufio.Reader
   bufWriter *bufio.Writer
+
+  heartbeat int
+  ticker    *time.Ticker
 }
 
 func Dial(host string, port int) (*Conn, error) {
@@ -91,6 +98,23 @@ func Dial(host string, port int) (*Conn, error) {
     bufReader: bufio.NewReader(conn),
     bufWriter: bufio.NewWriter(conn),
   }, nil
+}
+
+func (c *Conn) EnableHeartbeat(seconds int) {
+  if c.ticker != nil {
+    c.ticker.Stop()
+    c.ticker = nil
+  }
+  if seconds <= 0 {
+    c.heartbeat = 0
+    return
+  }
+  c.ticker = time.NewTicker(time.Second * time.Duration(seconds))
+  go func() {
+    for range c.ticker.C {
+      c.Ignore(strconv.FormatInt(rand.Int63(), 10))
+    }
+  }()
 }
 
 func (c *Conn) Put(priority, delay, ttr int, data []byte) (string, error) {

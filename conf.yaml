@@ -17,6 +17,8 @@ beanstalk:
   put_delay: 0
   # 发布的任务的TTR时间（秒）
   put_ttr: 21600
+  # 心跳间隔（秒）
+  heartbeat: 60
 
 # 设置Chrome和启动参数，
 # 在headless模式下，设置--user-data-dir会导致Chrome无响应（68.0.3440.106，非headless没影响，可能是Chrome的bug）

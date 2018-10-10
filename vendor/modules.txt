@@ -1,6 +1,6 @@
 # github.com/gorilla/websocket v1.4.0
 github.com/gorilla/websocket
-# github.com/kwf2030/commons v1.0.1
+# github.com/kwf2030/commons v1.0.2
 github.com/kwf2030/commons/beanstalk
 github.com/kwf2030/commons/boltdb
 github.com/kwf2030/commons/cdp
