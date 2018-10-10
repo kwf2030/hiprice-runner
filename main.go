@@ -322,7 +322,7 @@ func processMessages(ch chan<- *Product, arr []*Message) []*Payload {
 func reportMessages(task *Task) {
   var e error
   data, _ := json.Marshal(task)
-  dump(fmt.Sprintf("%s/dump/%s_msg.json", Conf.Log.Dir, task.ID), data)
+  dump(fmt.Sprintf("%s/dump/%s_report_messages.json", Conf.Log.Dir, task.ID), data)
   _, e = conn.Put(Conf.Beanstalk.PutPriority, Conf.Beanstalk.PutDelay, Conf.Beanstalk.PutTTR, data)
   if e != nil {
     logger.Error().Err(e).Msg("ERR: Put")
