@@ -42,7 +42,7 @@ var (
   conn *beanstalk.Conn
 )
 
-func main2() {
+func main() {
   file := "conf.yaml"
   if len(os.Args) == 2 {
     file = os.Args[1]
