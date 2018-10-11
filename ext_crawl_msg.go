@@ -54,7 +54,6 @@ func loadMessages(db *sql.DB, start, limit int) []*Message {
   if e != nil {
     return nil
   }
-  defer rows.Close()
   var aid uint64
   for rows.Next() {
     msg := &Message{}
@@ -64,6 +63,7 @@ func loadMessages(db *sql.DB, start, limit int) []*Message {
     }
     ret = append(ret, msg)
   }
+  rows.Close()
   for _, msg := range ret {
     fmt.Printf("\n%7s:%d\n%7s:%s\n%7s:%s\nContent:%s\n", "_id", aid, "id", msg.ID, "url", msg.URL, msg.Content)
     fmt.Println("\nEnter Real URL:")
