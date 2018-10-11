@@ -6,9 +6,7 @@ import (
   "errors"
   "fmt"
   "io"
-  "math/rand"
   "net"
-  "strconv"
   "strings"
   "time"
 )
@@ -112,7 +110,7 @@ func (c *Conn) EnableHeartbeat(seconds int) {
   c.ticker = time.NewTicker(time.Second * time.Duration(seconds))
   go func() {
     for range c.ticker.C {
-      c.Ignore(strconv.FormatInt(rand.Int63(), 10))
+      c.Ignore("heartbeat00")
     }
   }()
 }
