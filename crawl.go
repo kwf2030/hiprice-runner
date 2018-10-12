@@ -123,12 +123,14 @@ func matchURLFromChain(addr string, chain *chain) string {
 
 func normalizeURL(addr string) (string, *rule, *chain) {
   rule, chain := findChainByURL(addr)
-  if chain == nil {
-    return addr, rule, nil
-  }
-  ret := matchURLFromChain(addr, chain)
-  if ret != "" {
-    return ret, rule, chain
+  if rule != nil {
+    if chain == nil {
+      return addr, rule, nil
+    }
+    str := matchURLFromChain(addr, chain)
+    if str != "" {
+      return str, rule, chain
+    }
   }
   var addr1, addr2 string
   // 返回的是document.URL和chain表达式（如果有）计算的结果（都是URL，优先使用addr1）
@@ -136,13 +138,13 @@ func normalizeURL(addr string) (string, *rule, *chain) {
   if chain == nil {
     return addr1, rule, nil
   }
-  ret = matchURLFromChain(addr1, chain)
-  if ret != "" {
-    return ret, rule, chain
+  str := matchURLFromChain(addr1, chain)
+  if str != "" {
+    return str, rule, chain
   }
-  ret = matchURLFromChain(addr2, chain)
-  if ret != "" {
-    return ret, rule, chain
+  str = matchURLFromChain(addr2, chain)
+  if str != "" {
+    return str, rule, chain
   }
   return addr, rule, nil
 }
@@ -157,6 +159,7 @@ func evalURL(addr string) (string, string, *rule, *chain) {
   tab.Call(cdp.Page.Enable)
   tab.Call(cdp.Page.Navigate, cdp.Params{"url": addr})
   go func() {
+    time.Sleep(time.Second * 2)
     for msg := range tab.C {
       if msg.Method != cdp.Page.LoadEventFired {
         continue
