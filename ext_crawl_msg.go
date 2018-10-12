@@ -11,10 +11,12 @@ import (
   "github.com/kwf2030/commons/times"
 )
 
-const db = "127.0.0.1:3306"
-const dbu = "root"
-const dbp = "root"
-const dbn = "test"
+const (
+  dbHost = "127.0.0.1:3306"
+  dbUser = "root"
+  dbPwd  = "root"
+  dbName = "hiprice"
+)
 
 func doInit() {
   LoadConf("conf.yaml")
@@ -27,11 +29,11 @@ func doInit() {
 func connectMariaDB() *sql.DB {
   c := mysql.NewConfig()
   c.Net = "tcp"
-  c.Addr = fmt.Sprintf(db)
+  c.Addr = fmt.Sprintf(dbHost)
   c.Collation = "utf8mb4_unicode_ci"
-  c.User = dbu
-  c.Passwd = dbp
-  c.DBName = dbn
+  c.User = dbUser
+  c.Passwd = dbPwd
+  c.DBName = dbName
   c.Loc = times.TimeZoneSH
   c.ParseTime = true
   db, e := sql.Open("mysql", c.FormatDSN())
@@ -154,10 +156,11 @@ func validateChanged(p *Product, price, priceLow, priceHigh float64) bool {
   return false
 }
 
-func main() {
+func main2() {
   doInit()
   db := connectMariaDB()
-  arr := loadMessages(db, 0, 100)
+  arr := loadMessages(db, 229, 100)
+  db.Close()
   fmt.Printf("load %d messages\n", len(arr))
   if len(arr) == 0 {
     return
@@ -171,6 +174,7 @@ func main() {
     payloads = append(payloads, &Payload{Message: m, Product: p})
   }
   fmt.Printf("%d messages crawled\n", len(payloads))
+  db = connectMariaDB()
   update(db, payloads)
   fmt.Printf("done")
 }
