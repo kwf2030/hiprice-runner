@@ -159,7 +159,7 @@ func validateChanged(p *Product, price, priceLow, priceHigh float64) bool {
 func main2() {
   doInit()
   db := connectMariaDB()
-  arr := loadMessages(db, 229, 100)
+  arr := loadMessages(db, 244, 100)
   db.Close()
   fmt.Printf("load %d messages\n", len(arr))
   if len(arr) == 0 {
