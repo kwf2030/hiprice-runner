@@ -84,6 +84,7 @@ type Payload struct {
 }
 
 type Message struct {
+  AID int    `json:"_id,omitempty"`
   ID  string `json:"id,omitempty"`
   URL string `json:"url,omitempty"`
 
@@ -92,6 +93,7 @@ type Message struct {
 }
 
 type Product struct {
+  AID      int    `json:"_id,omitempty"`
   ID       string `json:"id,omitempty"`
   URL      string `json:"url,omitempty"`
   ShortURL string `json:"short_url,omitempty"`

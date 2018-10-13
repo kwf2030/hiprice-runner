@@ -56,10 +56,9 @@ func loadMessages(db *sql.DB, start, limit int) []*Message {
   if e != nil {
     return nil
   }
-  var aid uint64
   for rows.Next() {
     msg := &Message{}
-    e := rows.Scan(&aid, &msg.ID, &msg.Content, &msg.URL)
+    e := rows.Scan(&msg.AID, &msg.ID, &msg.Content, &msg.URL)
     if e != nil || (msg.Content == "" && msg.URL == "") {
       continue
     }
@@ -67,7 +66,7 @@ func loadMessages(db *sql.DB, start, limit int) []*Message {
   }
   rows.Close()
   for _, msg := range ret {
-    fmt.Printf("\n%7s:%d\n%7s:%s\n%7s:%s\nContent:%s\n", "_id", aid, "id", msg.ID, "url", msg.URL, msg.Content)
+    fmt.Printf("\n%7s:%d\n%7s:%s\n%7s:%s\nContent:%s\n", "_id", msg.AID, "id", msg.ID, "url", msg.URL, msg.Content)
     fmt.Println("\nEnter Real URL:")
     var addr string
     fmt.Scanln(&addr)
@@ -75,7 +74,6 @@ func loadMessages(db *sql.DB, start, limit int) []*Message {
     if len(addr) > 0 {
       msg.URL = addr
     }
-    fmt.Println(ret[0].URL)
   }
   return ret
 }
@@ -159,7 +157,7 @@ func validateChanged(p *Product, price, priceLow, priceHigh float64) bool {
 func main2() {
   doInit()
   db := connectMariaDB()
-  arr := loadMessages(db, 244, 100)
+  arr := loadMessages(db, 260, 100)
   db.Close()
   fmt.Printf("load %d messages\n", len(arr))
   if len(arr) == 0 {
