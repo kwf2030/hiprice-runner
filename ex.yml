@@ -1,0 +1,44 @@
+id: "1"
+version: 1
+name: "jd"
+alias: "京东"
+group: "g1"
+# 优先级在同一group生效，越小优先级越高
+priority: 1024
+match:
+  - "jd.com"
+  - "jd.hk"
+
+fields:
+  # 只有name/value时，用于定义变量，立即生效，用${source_value}引用，value只支持字符串
+  - name: "source"
+    alias: "平台"
+    value: "3"
+
+  # value/script/cmd都有时，按顺序依次执行，
+  # value会作为变量(${id_value})，script执行后若有返回结果，也会作为变量（${id_script}）立即生效
+  # 一旦执行reload或redirect命令，后面的不会再执行，变量也不再有效，相当于重新来过
+  # reload/redirect一般用于页面没加载完或没抓到值重试一遍，或有目的的重定向
+  - name: "id"
+    value: '1234'
+    script: "xxx"
+    cmd: "reload ${id}"
+
+  - name: "title"
+    alias: "标题"
+    script: "{document.querySelector('.sku-name').textContent.replace(/\\s+/g, ' ').trim();}"
+    # async只对script有效，默认false
+    async: true
+    cmd: "sleep 200ms"
+
+  - name: "comments.scroll"
+    alias: "滚动"
+    script: "document.documentElement.scrollBy(0, 1000);"
+
+  - name: "reload"
+    alias: "刷新"
+    cmd: "reload"
+
+  - name: "redirect"
+    alias: "重定向"
+    cmd: "redirect xxxx"
