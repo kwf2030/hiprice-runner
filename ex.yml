@@ -3,42 +3,66 @@ version: 1
 name: "jd"
 alias: "京东"
 group: "g1"
-# 优先级在同一group生效，越小优先级越高
-priority: 1024
+# 优先级在同一group生效，0为最高优先级
+priority: 100
 match:
   - "jd.com"
   - "jd.hk"
+output:
+  format: "log/csv/excel/db/http(JSON)"
+  # log/csv/excel需要
+  file: "result.log/result.xls"
+  # db需要（支持MYSQL/MARIADB）,如果没有表，会自动创建，但如果后面修改了规则，确保表结构也要一起修改
+  # 如果有表，也要确保表结构一致
+  db_host: "127.0.0.1"
+  db_port: "3306"
+  db_username: "root"
+  db_password: "root"
+  db_name: "result"
+  db_table: "result"
+  # http需要
+  endpoint: "http://127.0.0.1/result"
 
-fields:
-  # 只有name/value时，用于定义变量，立即生效，用${source_value}引用，value只支持字符串
-  - name: "source"
+# 登录
+prepare:
+  eval: "document.getElementByID('xx')"
+
+flow:
+  # value通常是用于定义变量，立即生效且全局有效，用${source}引用，只支持字符串
+  - field: "source"
     alias: "平台"
     value: "3"
 
-  # value/script/cmd都有时，按顺序依次执行，
-  # value会作为变量(${id_value})，script执行后若有返回结果，也会作为变量（${id_script}）立即生效
-  # 一旦执行reload或redirect命令，后面的不会再执行，变量也不再有效，相当于重新来过
-  # reload/redirect一般用于页面没加载完或没抓到值重试一遍，或有目的的重定向
-  - name: "id"
+  # eval计算结果（纯字符串或JSON）会存到变量中，立即生效且全局有效，用${id}引用
+  - field: "id"
+    eval: "document.getElementByID('xx')"
+
+  # value/eval都有，value会在此field中以变量${value}存在，但还是以${price}引用eval的计算结果作为返回结果
+  - field: "price"
+    alias: "价格"
+    eval: "document.getElementByID('xx')"
     value: '1234'
-    script: "xxx"
-    cmd: "reload ${id}"
 
-  - name: "title"
+  - field: "title"
     alias: "标题"
-    script: "{document.querySelector('.sku-name').textContent.replace(/\\s+/g, ' ').trim();}"
-    # async只对script有效，默认false
+    eval: "{document.querySelector('.sku-name').textContent.replace(/\\s+/g, ' ').trim();}"
+    # async只对eval有效，默认false
     async: true
-    cmd: "sleep 200ms"
 
-  - name: "comments.scroll"
+  - field: "comments.scroll"
     alias: "滚动"
     script: "document.documentElement.scrollBy(0, 1000);"
+    # 单位自动解析，表示此field计算过后等待指定时间
+    sleep: '500ms'
 
-  - name: "reload"
-    alias: "刷新"
-    cmd: "reload"
-
-  - name: "redirect"
-    alias: "重定向"
-    cmd: "redirect xxxx"
+loop:
+  field: ""
+  alias: ""
+  # prepare->[wait 2s]->loop(eval->break->next->wait)
+  prepare: "document.getElementByID('xx')"
+  # ${last}引用前一次eval计算结果
+  eval: "document.getElementByID('xx')"
+  # interval比pagination少了next
+  next: "document.getElementByID('xx')"
+  wait: "2s"
+  break: "a===1"
