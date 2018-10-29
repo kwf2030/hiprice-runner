@@ -5,30 +5,30 @@ alias: "京东"
 group: "g1"
 # 优先级在同一group生效，0为最高优先级
 priority: 100
-match:
-  - "jd.com"
-  - "jd.hk"
 output:
-  format: "log/csv/excel/db/http(JSON)"
-  # log/csv/excel需要
-  file: "result.log/result.xls"
+  format: "csv/excel/db/http(JSON)"
+  # csv/excel需要，如果文件存在，以文件名+时间戳命名(result_2018.10.29-12.30.20.xls)
+  file: "result.csv/result.xls"
   # db需要（支持MYSQL/MARIADB）,如果没有表，会自动创建，但如果后面修改了规则，确保表结构也要一起修改
   # 如果有表，也要确保表结构一致
   db_host: "127.0.0.1"
-  db_port: "3306"
-  db_username: "root"
+  db_port: 3306
+  db_user: "root"
   db_password: "root"
-  db_name: "result"
-  db_table: "result"
+  db_name: "db"
+  db_table: "table"
   # http需要
   endpoint: "http://127.0.0.1/result"
 
-# 登录
-prepare:
-  eval: "document.getElementByID('xx')"
+match:
+  - "jd.com"
+  - "jd.hk"
+# 登录，返回值表示是否准备就绪("false"或空字符串表示false)
+prepare: "document.getElementByID('xx')"
 
-flow:
-  # value通常是用于定义变量，立即生效且全局有效，用${source}引用，只支持字符串
+# 所有的变量都是简单的字符替换，不会额外添加任何符号（包括引号）
+collect:
+  # value通常是用于定义变量，立即生效且全局有效，用${source}引用
   - field: "source"
     alias: "平台"
     value: "3"
@@ -37,7 +37,8 @@ flow:
   - field: "id"
     eval: "document.getElementByID('xx')"
 
-  # value/eval都有，value会在此field中以变量${value}存在，但还是以${price}引用eval的计算结果作为返回结果
+  # value/eval都有，value会在此field中以变量${value}存在，但还是以${price}引用eval的计算结果作为返回结果存到变量中
+  # eval可以引用${value}
   - field: "price"
     alias: "价格"
     eval: "document.getElementByID('xx')"
@@ -46,21 +47,28 @@ flow:
   - field: "title"
     alias: "标题"
     eval: "{document.querySelector('.sku-name').textContent.replace(/\\s+/g, ' ').trim();}"
-    # async只对eval有效，默认false
-    async: true
 
   - field: "comments.scroll"
     alias: "滚动"
-    script: "document.documentElement.scrollBy(0, 1000);"
-    # 单位自动解析，表示此field计算过后等待指定时间
-    sleep: '500ms'
+    eval: "document.documentElement.scrollBy(0, 1000);"
+    # async只对eval有效，默认false
+    async: true
+    # eval之后等待指定时间(单位自动解析，ms/s/min/h)
+    wait: "500ms"
 
+# 无论是否有loop，都会先计算collect，collect中的变量在loop中也可用
+# 数据返回按次，例如循环10次再输出数据（每次输出IO开销可能会比较大，10次数据会在内存中）
+# field会以page_count返回，count是输出的次数（或循环的次数），
+# 例如每循环10次输出一次（output_cycle=10），第一次输出的field就是page_1，第二次就是page_2（实际已经循环了20次）
 loop:
-  field: ""
-  alias: ""
-  # prepare->[wait 2s]->loop(eval->break->next->wait)
+  field: "page"
+  alias: "分页"
+  output_cycle: 10
+  # prepare->[wait_when_ready]->loop(eval->break->next->wait)
+  # 返回true才会继续
   prepare: "document.getElementByID('xx')"
-  # ${last}引用前一次eval计算结果
+  wait_when_ready: "2s"
+  # ${last}引用前一次eval计算结果, ${index}引用循环次数（从1开始）
   eval: "document.getElementByID('xx')"
   # interval比pagination少了next
   next: "document.getElementByID('xx')"

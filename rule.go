@@ -1,6 +1,10 @@
 package main
 
 import (
+  "errors"
+  "sort"
+  "time"
+
   "gopkg.in/yaml.v2"
 )
 
@@ -13,62 +17,97 @@ type Rule struct {
   Alias    string
   Group    string
   Priority int
+  Output   *Output
   Match    []string
-  Fields   []Field
+  Prepare  string
+  Collect  *Collect
+  Loop     *Loop
 }
 
-type Field struct {
-  Name   string
-  Alias  string
-  Value  string
-  Script string
-  Async  bool
-  Cmd    string
+type Output struct {
+  Format     string
+  File       string
+  DBHost     string
+  DBPort     int
+  DBUser     string
+  DBPassword string
+  DNName     string
+  DBTable    string
+  Endpoint   string
 }
 
-func UpdateRules(data []byte) error {
-  if len(data) == 0 {
-    return nil
+type Collect struct {
+  Field   string
+  Alias   string
+  Value   string
+  Eval    string
+  Async   bool
+  WaitStr string
+  Wait    time.Duration
+}
+
+type Loop struct {
+  Field            string
+  Alias            string
+  OutputCycle      int
+  Prepare          string
+  WaitWhenReadyStr string
+  WaitWhenReady    time.Duration
+  Eval             string
+  Next             string
+  WaitStr          string
+  Wait             time.Duration
+  Break            string
+}
+
+func UpdateRules(group string, data []byte) error {
+  if group == "" || len(data) == 0 {
+    return errors.New("empty arguments")
   }
-  rules := make([]*Rule, 0, 16)
+  capacity := 16
+  if allRules == nil {
+    allRules = make(map[string][]*Rule, capacity)
+  }
+  rules := make([]*Rule, 0, capacity)
   e := yaml.Unmarshal(data, &rules)
   if e != nil {
     return e
   }
-  if allRules == nil {
-    allRules = make(map[string][]*Rule, 16)
+  if _, ok := allRules[group]; !ok {
+    allRules[group] = make([]*Rule, 0, capacity)
   }
   for _, r := range rules {
-    if _, ok := allRules[r.Group]; !ok {
-      allRules[r.Group] = make([]*Rule, 0, 16)
-      allRules[r.Group] = append(allRules[r.Group], r)
-    } else {
-      index := -1
-      for i, v := range allRules[r.Group] {
-        if v.Id == r.Id {
-          index = i
-          break
-        }
+    if r.Group != group {
+      continue
+    }
+    index := -1
+    for i, old := range allRules[group] {
+      if old.Id == r.Id {
+        index = i
+        break
       }
-      if index == -1 {
-        allRules[r.Group] = append(allRules[r.Group], r)
-      } else {
-        old := allRules[r.Group][index]
-        if old.Version < r.Version {
-          allRules[r.Group][index] = r
-        }
+    }
+    if index == -1 {
+      allRules[group] = append(allRules[group], r)
+    } else {
+      old := allRules[group][index]
+      if old.Version < r.Version {
+        allRules[group][index] = r
       }
     }
   }
+  sort.SliceStable(allRules[group], func(i, j int) bool {
+    return allRules[group][i].Priority < allRules[group][j].Priority
+  })
   return nil
 }
 
-func removeRules(group string, ids ...string) {
+func removeRules(group string, ids ...string) error {
   if group == "" || len(ids) == 0 {
-    return
+    return errors.New("empty arguments")
   }
   if _, ok := allRules[group]; !ok {
-    return
+    return errors.New("no such group")
   }
   for _, id := range ids {
     index := -1
@@ -82,8 +121,5 @@ func removeRules(group string, ids ...string) {
       allRules[group] = append(allRules[group][:index], allRules[group][index+1:]...)
     }
   }
-}
-
-func main() {
-  removeRules("1", "2")
+  return nil
 }
