@@ -1,76 +1,67 @@
-id: "1"
+id: "xx"
 version: 1
-name: "jd"
-alias: "京东"
-group: "g1"
-# 优先级在同一group生效，0为最高优先级
+name: "xx"
+alias: "别名"
+group: "xx"
+# 优先级在同一group内有效，0为最高优先级
 priority: 100
-output:
-  format: "csv/excel/db/http(JSON)"
-  # csv/excel需要，如果文件存在，以文件名+时间戳命名(result_2018.10.29-12.30.20.xls)
-  file: "result.csv/result.xls"
-  # db需要（支持MYSQL/MARIADB）,如果没有表，会自动创建，但如果后面修改了规则，确保表结构也要一起修改
-  # 如果有表，也要确保表结构一致
-  db_host: "127.0.0.1"
-  db_port: 3306
-  db_user: "root"
-  db_password: "root"
-  db_name: "db"
-  db_table: "table"
-  # http需要
-  endpoint: "http://127.0.0.1/result"
 
-match:
-  - "jd.com"
-  - "jd.hk"
-# 登录，返回值表示是否准备就绪("false"或空字符串表示false)
-prepare: "document.getElementByID('xx')"
+patterns:
+- "xxx"
+- "xxx"
 
-# 所有的变量都是简单的字符替换，不会额外添加任何符号（包括引号）
-collect:
-  # value通常是用于定义变量，立即生效且全局有效，用${source}引用
+# 如果有prepare，必须返回true流程才会继续（"false"或空字符串表示false）
+prepare:
+  eval: "js"
+  wait_when_ready: "2s"
+
+collector:
+  # ns（纳秒），us（微秒），ms（毫秒），s（秒），m（分），h（时）
+  page_load_timeout: "10s"
+
+  once:
+  - field: "id"
+    # eval计算结果（纯字符串或JSON字符串）会作为JS全局变量，后续eval可直接使用
+    # 因为field会作为变量名，所以不要使用JS关键字和符号
+    eval: "js"
+
   - field: "source"
     alias: "平台"
+    # value替代eval，返回常量
     value: "3"
 
-  # eval计算结果（纯字符串或JSON）会存到变量中，立即生效且全局有效，用${id}引用
-  - field: "id"
-    eval: "document.getElementByID('xx')"
-
-  # value/eval都有，value会在此field中以变量${value}存在，但还是以${price}引用eval的计算结果作为返回结果存到变量中
-  # eval可以引用${value}
+  # eval/value并存
+  # value会作为eval的局部变量
   - field: "price"
     alias: "价格"
-    eval: "document.getElementByID('xx')"
+    eval: "js"
     value: '1234'
 
-  - field: "title"
-    alias: "标题"
-    eval: "{document.querySelector('.sku-name').textContent.replace(/\\s+/g, ' ').trim();}"
-
-  - field: "comments.scroll"
+  - field: "comments_scroll"
     alias: "滚动"
-    eval: "document.documentElement.scrollBy(0, 1000);"
-    # async只对eval有效，默认false
-    async: true
-    # eval之后等待指定时间(单位自动解析，ms/s/min/h)
+    eval: "js"
+    # 是否采集eval结果
+    # 默认true，false的话即表示不采集并且eval结果也不会作为JS全局变量（用于无需返回的eval）
+    export: false
+    # eval之后等待指定时间
     wait: "500ms"
 
-# 无论是否有loop，都会先计算collect，collect中的变量在loop中也可用
-# 数据返回按次，例如循环10次再输出数据（每次输出IO开销可能会比较大，10次数据会在内存中）
-# field会以page_count返回，count是输出的次数（或循环的次数），
-# 例如每循环10次输出一次（output_cycle=10），第一次输出的field就是page_1，第二次就是page_2（实际已经循环了20次）
-loop:
-  field: "page"
-  alias: "分页"
-  output_cycle: 10
-  # prepare->[wait_when_ready]->loop(eval->break->next->wait)
-  # 返回true才会继续
-  prepare: "document.getElementByID('xx')"
-  wait_when_ready: "2s"
-  # ${last}引用前一次eval计算结果, ${index}引用循环次数（从1开始）
-  eval: "document.getElementByID('xx')"
-  # interval比pagination少了next
-  next: "document.getElementByID('xx')"
-  wait: "2s"
-  break: "a===1"
+  # 无论是否有loop，都会先采集once中的field
+  # loop的数据周期性（export_cycle）输出，field会自动添加后缀
+  # 例如每循环10次输出一次（export_cycle=10），第一次输出的field就是page_1，第100次输出就是page_100
+  loop:
+    field: "page"
+    alias: "分页"
+    export_cycle: 10
+    # 如果有prepare，必须返回true流程才会继续
+    # prepare_eval-->prepare_wait_when_ready-->loop(eval-->break-->next-->wait)
+    prepare:
+      eval: "js"
+      wait_when_ready: "2s"
+    # last（前一次eval结果）和index（循环次数）会作为JS全局变量并在每次循环后更新
+    eval: "js"
+    # 下一次eval前执行（如翻页）
+    next: "js"
+    wait: "2s"
+    # 循环终止条件
+    break: "js"

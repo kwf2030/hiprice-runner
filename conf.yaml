@@ -1,60 +1,13 @@
-log:
-  dir: 'log'
-  level: 'info'
-
-beanstalk:
-  host: 'localhost'
-  port: 11300
-  # 取任务的队列
-  reserve_tube: 'task_dispatch'
-  # 取任务的超时时间（秒）
-  reserve_timeout: 0
-  # 发布任务的队列
-  put_tube: 'task_report'
-  # 发布的任务的优先级
-  put_priority: 1024
-  # 发布的任务进入Ready状态的延迟时间（秒）
-  put_delay: 0
-  # 发布的任务的TTR时间（秒）
-  put_ttr: 21600
-  # 心跳间隔（秒）
-  heartbeat: 60
-
-# 设置Chrome和启动参数，
-# 在headless模式下，设置--user-data-dir会导致Chrome无响应（68.0.3440.106，非headless没影响，可能是Chrome的bug）
+# 在headless模式下，设置--user-data-dir可能会导致Chrome无响应
+# 68.0.3440.106，非headless没影响，可能是Chrome的bug
 chrome:
-  windows:
-    exec: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe'
+  exec: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe'
     args:
-      - '--remote-debugging-port=9222'
-      #- '--headless'
-      #- '--disable-gpu'
-      #- '--user-data-dir=D:/AppData/ChromeUserData'
-      #- '--no-first-run'
-      #- '--no-default-browser-check'
-      #- '--window-size=1024,768'
-      #- 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1'
-  linux:
-    exec: '/usr/bin/google-chrome-stable'
-    args:
-      - '--remote-debugging-port=9222'
-      #- '--headless'
-      #- '--user-data-dir=.ChromeUserData'
-      #- '--no-first-run'
-      #- '--no-default-browser-check'
-      #- '--window-size=1024,768'
-      #- 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1'
-
-task:
-  # 每次任务完成后距离下次任务轮询间隔（分钟）
-  polling_interval: 2
-  # 规则配置文件目录，该目录(包括子目录)下所有yaml文件（隐藏目录和文件除外）都会被加载
-  rules: 'rules'
-  # 判断商品是否需要抓取的时间段（分钟），
-  # 如果商品在该时间段内抓取过，则不会再抓一次，也不会提交，
-  # 如果为0表示不检查（始终抓取）
-  crawl_duration: 360
-  # 每个链接重试抓取次数
-  crawl_retry: 3
-  # 每个链接抓取超时时间（秒）
-  crawl_timeout: 5
+    - '--remote-debugging-port=9222'
+    #- '--headless'
+    #- '--disable-gpu'
+    #- '--user-data-dir=D:/AppData/ChromeUserData'
+    #- '--no-first-run'
+    #- '--no-default-browser-check'
+    #- '--window-size=1024,768'
+    #- 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1'

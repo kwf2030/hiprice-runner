@@ -31,11 +31,11 @@ type BeanstalkConf struct {
 }
 
 type ChromeConf struct {
-  Windows Chrome `yaml:"windows"`
-  Linux   Chrome `yaml:"linux"`
+  Windows Chromes `yaml:"windows"`
+  Linux   Chromes `yaml:"linux"`
 }
 
-type Chrome struct {
+type Chromes struct {
   Exec string   `yaml:"exec"`
   Args []string `yaml:"args"`
 }
@@ -54,4 +54,16 @@ func LoadConf(file string) error {
     return e
   }
   return yaml.Unmarshal(data, Conf)
+}
+
+type Output struct {
+  Format     string `yaml:"format"`
+  File       string `yaml:"file"`
+  DBHost     string `yaml:"db_host"`
+  DBPort     int    `yaml:"db_port"`
+  DBUser     string `yaml:"db_user"`
+  DBPassword string `yaml:"db_password"`
+  DNName     string `yaml:"db_name"`
+  DBTable    string `yaml:"db_table"`
+  Endpoint   string `yaml:"endpoint"`
 }

@@ -9,7 +9,7 @@ import (
   "gopkg.in/yaml.v2"
 )
 
-var Rules []*rule
+// var Rules []*rule
 
 type rule struct {
   Name       string           `yaml:"name"`

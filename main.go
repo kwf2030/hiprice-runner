@@ -17,9 +17,10 @@ import (
   "github.com/kwf2030/commons/httputil"
   "github.com/kwf2030/commons/times"
   "github.com/rs/zerolog"
+  "gopkg.in/yaml.v2"
 )
 
-const Version = "1.0.1"
+const Version = "2.0.0"
 
 var (
   // 保存所有抓过的商品，
@@ -126,17 +127,24 @@ func initStore() {
   }
 }
 
-func initChrome() {
-  var c Chrome
-  switch runtime.GOOS {
-  case "windows":
-    c = Conf.Chrome.Windows
-  case "linux":
-    c = Conf.Chrome.Linux
-  default:
-    panic(errors.New("platform not supported"))
+type Chrome struct {
+  Exec string
+  Args []string
+}
+
+func NewChromeInstance() {
+  f := "chrome.yml"
+  _, e := os.Stat(f)
+  c := &Chrome{}
+  if e == nil {
+    data, e := ioutil.ReadFile(f)
+    if e == nil {
+      e = yaml.Unmarshal(data, c)
+    }
   }
-  var e error
+  if runtime.GOOS=="windows" {
+    c.Args = append(c.Args, "--disable-gpu")
+  }
   chrome, e = cdp.LaunchChrome(c.Exec, c.Args...)
   if e != nil {
     panic(e)
