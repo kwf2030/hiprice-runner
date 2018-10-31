@@ -15,7 +15,7 @@ type Result map[string]interface{}
 
 // 请求/响应/事件通知
 type Message struct {
-  // 请求的ID，响应中会带有相同的ID，每次请求Tab.id自增后赋值给Message.Id，
+  // 请求的ID，响应中会带有相同的ID，每次请求Tab.lastMessageId自增后赋值给Message.Id，
   // 事件通知没有该字段
   Id int32 `json:"id,omitempty"`
 
@@ -29,10 +29,10 @@ type Message struct {
   // 响应数据（请求和事件通知没有该字段）
   Result Result `json:"result,omitempty"`
 
-  // 是否是异步请求（只有请求有该字段）
+  // 请求是否等待响应（只有请求有该字段）
   async bool
 
-  // 同步请求在此channel上等待响应（只有请求有该字段）
+  // 请求在此channel上等待响应（只有请求有该字段）
   syncChan chan *Message
 }
 
@@ -56,7 +56,7 @@ type Tab struct {
   conn *websocket.Conn
 
   // 每次请求自增
-  id int32
+  lastMessageId int32
 
   // 非零表示Tab已经关闭
   closed int32
@@ -72,7 +72,7 @@ type Tab struct {
 
   // 存放两类数据：
   // 1.订阅的事件（string-->bool），key是Message.Method，用于过滤WebSocket读取到的事件，
-  // 2.请求的Message（int32-->*Message），key是Tab.id，用于读取到数据时找到对应的请求Message
+  // 2.请求的Message（int32-->*Message），key是Message.Id，用于读取到数据时找到对应的请求Message
   eventsAndMessages sync.Map
 }
 
@@ -123,16 +123,16 @@ func (t *Tab) dispatch(msg *Message) {
   // Message.id为0表示事件通知
   if msg.Id == 0 {
     // 若注册过该类事件，则进行通知
-    if _, ok := t.eventsAndCalls.Load(msg.Method); ok {
+    if _, ok := t.eventsAndMessages.Load(msg.Method); ok {
       t.C <- msg
     }
     return
   }
   // Message.id非0表示响应，
   // 找到对应的请求，同步异步分别处理
-  if v, ok := t.eventsAndCalls.Load(msg.Id); ok {
+  if v, ok := t.eventsAndMessages.Load(msg.Id); ok {
     if req, ok := v.(*Message); ok {
-      t.eventsAndCalls.Delete(msg.Id)
+      t.eventsAndMessages.Delete(msg.Id)
       // 响应中没有Method，找到对应的请求，用请求中的method给其赋值
       msg.Method = req.Method
       if req.async {
@@ -154,7 +154,7 @@ func (t *Tab) Call(method string, params ...Params) *Message {
   if len(params) > 0 {
     p = params[0]
   }
-  id := atomic.AddInt32(&t.id, 1)
+  id := atomic.AddInt32(&t.lastMessageId, 1)
   ch := make(chan *Message)
   msg := &Message{
     Id:       id,
@@ -162,7 +162,7 @@ func (t *Tab) Call(method string, params ...Params) *Message {
     Params:   p,
     syncChan: ch,
   }
-  t.eventsAndCalls.Store(id, msg)
+  t.eventsAndMessages.Store(id, msg)
   t.sendChan <- msg
   return <-ch
 }
@@ -175,26 +175,26 @@ func (t *Tab) CallAsync(method string, params ...Params) {
   if len(params) > 0 {
     p = params[0]
   }
-  id := atomic.AddInt32(&t.id, 1)
+  id := atomic.AddInt32(&t.lastMessageId, 1)
   msg := &Message{
     Id:     id,
     Method: method,
     Params: p,
     async:  true,
   }
-  t.eventsAndCalls.Store(id, msg)
+  t.eventsAndMessages.Store(id, msg)
   t.sendChan <- msg
 }
 
 func (t *Tab) Subscribe(method string) {
   if method != "" {
-    t.eventsAndCalls.Store(method, true)
+    t.eventsAndMessages.Store(method, true)
   }
 }
 
 func (t *Tab) Unsubscribe(method string) {
   if method != "" {
-    t.eventsAndCalls.Delete(method)
+    t.eventsAndMessages.Delete(method)
   }
 }
 
@@ -207,14 +207,14 @@ func (t *Tab) Activate() {
 }
 
 func (t *Tab) Close() {
-  // 只要调用过Close，就把Tab.closed标识设为1，
-  // 防止一个Tab多次调用Close
+  // 只要调用Close，就把Tab.closed标识设为1，
+  // 防止Close被多次调用
   if !atomic.CompareAndSwapInt32(&t.closed, 0, 1) {
     return
   }
   close(t.closeChan)
   close(t.C)
-  t.eventsAndCalls.Range(func(k, v interface{}) bool {
+  t.eventsAndMessages.Range(func(k, v interface{}) bool {
     if msg, ok := v.(*Message); ok && msg.syncChan != nil {
       close(msg.syncChan)
     }

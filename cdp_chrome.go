@@ -12,7 +12,7 @@ import (
 
 type Chrome string
 
-func LaunchInstance(bin string, args ...string) (Chrome, error) {
+func Launch(bin string, args ...string) (Chrome, error) {
   if bin == "" {
     return "", errors.New("empty <bin>")
   }
@@ -35,15 +35,18 @@ func LaunchInstance(bin string, args ...string) (Chrome, error) {
     port = "9222"
     args = append(args, fmt.Sprintf("--remote-debugging-port=%s", port))
   }
-  exec.Command(bin, args...).Start()
-  // LaunchInstance返回后立即调用Chrome.NewTab可能会出现空指针，
-  // 因为浏览器尚未启动完毕，
+  e = exec.Command(bin, args...).Start()
+  if e != nil {
+    return "", e
+  }
+  // Launch返回后立即调用Chrome.NewTab可能会出现空指针，
+  // 因为浏览器可能没有启动完毕，
   // 所以需要延迟一段时间等待浏览器启动完毕后再调用Chrome.NewTab，
-  // 最好是提前调用LaunchInstance，先把浏览器启动起来再做其他初始化工作
+  // 建议尽量提前调用Launch（例如先把浏览器启动起来再做其他初始化工作）
   return Chrome(fmt.Sprintf("http://127.0.0.1:%s/json", port)), nil
 }
 
-func AttachInstance(host string, port int) (Chrome, error) {
+func Connect(host string, port int) (Chrome, error) {
   if host == "" || port <= 0 {
     return "", errors.New("invalid <host>/<port>")
   }
@@ -62,16 +65,20 @@ func (c Chrome) NewTab() (*Tab, error) {
   if e != nil {
     return nil, e
   }
+  if meta.Id == "" || meta.WebSocketDebuggerUrl == "" {
+    return nil, errors.New("NewTab receives empty Id/WebSocketDebuggerUrl")
+  }
   t := &Tab{
     endpoint:          endpoint,
     meta:              meta,
     closeChan:         make(chan struct{}),
-    sendChan:          make(chan *Message, 2),
-    C:                 make(chan *Message, 4),
+    sendChan:          make(chan *Message, 1),
+    C:                 make(chan *Message, 2),
     eventsAndMessages: sync.Map{},
   }
   t.conn, e = t.wsConnect()
   if e != nil {
+    t.Close()
     return nil, e
   }
   go t.wsRead()
