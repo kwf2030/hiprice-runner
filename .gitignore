@@ -18,10 +18,5 @@
 /.vscode/
 *.sublime-project
 *.sublime-workspace
-/hiprice-runner
-/main
-/.ChromeUserData/
 /log/
-*.log
-*.db
-*.db.lock
+/hiprice-runner

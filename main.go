@@ -8,8 +8,6 @@ import (
   "runtime"
   "time"
 
-  "github.com/kwf2030/commons/cdp"
-  "github.com/kwf2030/commons/times"
   "github.com/nats-io/go-nats"
   "github.com/rs/zerolog"
   "gopkg.in/yaml.v2"
@@ -21,7 +19,7 @@ var (
   logFile *os.File
   logger  *zerolog.Logger
 
-  chrome cdp.Chrome
+  chrome Chrome
 
   conn *nats.Conn
 )
@@ -35,7 +33,7 @@ func main() {
   defer func() {
     tab, e := chrome.NewTab()
     if e == nil {
-      tab.CallAsync(cdp.Browser.Close)
+      tab.CallAsync(Browser.Close)
     }
   }()
 
@@ -57,10 +55,10 @@ func initLogger() {
   if logFile != nil {
     logFile.Close()
   }
-  logFile, _ = os.Create(fmt.Sprintf("log/runner_%s.log", times.NowStrFormat(times.DateFormat3)))
+  now := time.Now()
+  logFile, _ = os.Create(fmt.Sprintf("log/runner_%s.log", now.Format("20060102")))
   lg := zerolog.New(logFile).Level(zerolog.InfoLevel).With().Timestamp().Logger()
   logger = &lg
-  now := times.Now()
   next := now.Add(time.Hour * 24)
   next = time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, next.Location())
   time.AfterFunc(next.Sub(now), func() {
@@ -91,13 +89,13 @@ func initChrome() {
       c.Exec = "/usr/bin/google-chrome-stable"
     }
   }
-  chrome, e = cdp.LaunchChrome(c.Exec, c.Args...)
+  chrome, e = LaunchInstance(c.Exec, c.Args...)
   if e != nil {
     panic(e)
   }
   tab, _ := chrome.NewTab()
   defer tab.Close()
-  msg := tab.Call(cdp.Browser.GetVersion)
+  msg := tab.Call(Browser.GetVersion)
   logger.Info().Msg(msg.Result["product"].(string))
 }
 
