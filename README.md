@@ -1,2 +1,2 @@
 # hiprice-runner
-Crawler for HiPrice.
+Collector for HiPrice.
