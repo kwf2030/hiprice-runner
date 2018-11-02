@@ -2,8 +2,8 @@ github.com/golang/protobuf v1.2.0 h1:P3YflyNX/ehuJFLhxviNdFxQPkGK5cDcApsge1SqnvM
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/gorilla/websocket v1.4.0 h1:WDFjx/TMzVgy9VdMMQi2K2Emtwi2QcUQsztZ/zLaH/Q=
 github.com/gorilla/websocket v1.4.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
-github.com/kwf2030/commons v1.0.3 h1:EwIa8HyUFFppO2Pdi/0rOdgbM8ddL1shgWlZlWlHrGU=
-github.com/kwf2030/commons v1.0.3/go.mod h1:lg+IYoK9CO7FEwLxfcKJXugNt4O2aL4Zczu1bDwtvQI=
+github.com/kwf2030/commons v1.0.4 h1:O/n7o/8nphk2AbRNv4gOdhlINLv20wRgoX9Vet0ubt4=
+github.com/kwf2030/commons v1.0.4/go.mod h1:lg+IYoK9CO7FEwLxfcKJXugNt4O2aL4Zczu1bDwtvQI=
 github.com/nats-io/gnatsd v1.3.0 h1:+5d80klu3QaJgNbdavVBjWJP7cHd11U2CLnRTFM9ICI=
 github.com/nats-io/gnatsd v1.3.0/go.mod h1:nqco77VO78hLCJpIcVfygDP2rPGfsEHkGTUk94uh5DQ=
 github.com/nats-io/go-nats v1.6.0 h1:FznPwMfrVwGnSCh7JTXyJDRW0TIkD4Tr+M1LPJt9T70=

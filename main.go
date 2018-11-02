@@ -21,7 +21,7 @@ var (
   logFile *os.File
   logger  *zerolog.Logger
 
-  chrome cdp.Chrome
+  chrome *cdp.Chrome
 
   conn *nats.Conn
 )
@@ -107,6 +107,6 @@ func initNats() {
   if e != nil {
     panic(e)
   }
-  // 请求规则的队列，规则更新的队列
-  // 获取任务的队列，提交任务的队列
+  // 请求规则的队列rule.all，规则更新的队列rule.update
+  // 获取任务的队列task.collect.req，提交任务的队列task.collect.resp
 }
